@@ -1,9 +1,11 @@
+
 (ns shadow-re-frame.simple
   "Example of `re-frame-simple`, an alternate `re-frame` syntax for simple use cases."
   (:require
    [re-view.re-frame-simple :as db]
    [reagent.core :as reagent]
-   [shadow-re-frame.welcome :as text]))
+   [shadow-re-frame.welcome :as text]
+   [shadow-re-frame.devexpress :as devexpress]))
 
 ;;
 ;; For a complete introduction to `re-view.re-frame-simple`, see the readme:
@@ -97,40 +99,121 @@
 (defn root-view
   "Render the page"
   []
-  [:div.root-layout
+  [:div {:style {:background-color "#f5f5f5"
+                 :height "100vh"
+                 :width "100hw"
+                 :padding "20px"}}
+   ;; material-ui elements
+   [devexpress/typography {:variant "h5"} "Material-UI components"]
+   [devexpress/paper {:style {:padding "10px"}}
+    [devexpress/button {:variant "contained"
+                        :color "primary"}
+     "Hello World"]]
 
-   [:div.font-large {:style {:margin "1rem 0"}} "Welcome!"]
+   [:br]
+   [:br]
 
-   [:p.font-normal "This is a demo of "
-    [:a {:href "https://github.com/Day8/re-frame-10x"} "re-frame-10x"] ", "
-    [:a {:href "https://github.com/thheller/shadow-cljs/"} "shadow-cljs"] ", and "
-    [:a {:href "https://github.com/mhuebert/re-frame-simple"}
-     "re-frame-simple"] ". Read " [:a {:href "#welcome"} "more,"] " see "
-    [:a {:href "https://github.com/mhuebert/shadow-re-frame/blob/master/src/shadow_re_frame/simple.cljs"} "source code"] "."]
+   ;; devexpress table components
+   ;; a normal table with paging and sorting
+   [:div
+    [devexpress/typography {:variant "h5"} "DevExpress: A normal table with paging and sorting"]
+    [:br]
+    [devexpress/paper
+     [devexpress/grid {:rows (for [item (range 12)]
+                               {:product (str "Product " item)
+                                :region (nth ["APAC" "US" "EUROPE"] (rand-int 3))
+                                :amount (rand-int 100)
+                                :saleDate "22.12.2019"
+                                :customer "John"
+                                :url (str "https://example.org/product" item)
+                                :id item})
+                       :columns [{:name "id" :title "ID"}
+                                 {:name "product" :title "Product"}
+                                 {:name "region" :title "Region"}
+                                 {:name "amount" :title "Amount"}
+                                 {:name "saleDate" :title "Sale Date"}
+                                 {:name "customer" :title "Customer"}]}
+      [devexpress/sorting-state {:defaultSorting [{:columnName "id"
+                                                   :direction "asc"}]}]
+      [devexpress/integrated-sorting]
+      [devexpress/paging-state {:defaultCurrentPage 0
+                                :defaultPageSize 10}]
+      [devexpress/integrated-paging]
+      [devexpress/table]
+      [devexpress/table-header-row {:showSortingControls true}]
+      [devexpress/paging-panel {:pageSizes [2,5,10]}]]]]
 
-   (doall (for [id (counter-ids)]
-            ^{:key id} [counter id]))
+   [:br]
+   [:br]
 
-   [:div.button
-    {:on-click #(db/dispatch [:new-counter])
-     :style {:background "pink"}}
-    "Add Counter"]
+   ;; a normal table with paging, sorting and links
+   [:div
+    [devexpress/typography {:variant "h5"} "DevExpress: A normal table with paging, sorting and custom link formatting"]
+    [:br]
+    [devexpress/paper
+     (let [rows (for [item (range 12)]
+                  {:product (str "Product " item)
+                   :region (nth ["APAC" "US" "EUROPE"] (rand-int 3))
+                   :amount (rand-int 100)
+                   :saleDate "22.12.2019"
+                   :customer "John"
+                   :url (str "https://example.org/product" item)
+                   :id item})]
+       [devexpress/grid {:rows rows
+                         :columns [{:name "id" :title "ID"}
+                                   {:name "product" :title "Product"}
+                                   {:name "region" :title "Region"}
+                                   {:name "amount" :title "Amount"}
+                                   {:name "saleDate" :title "Sale Date"}
+                                   {:name "customer" :title "Customer"}
+                                   {:name "url" :title "URL"}]}
+        ;; a custom data type provider seems to struggle with reagent's default of turning all the :for keys into :htmlFor
+        ;; https://github.com/reagent-project/reagent/blob/ecbbc60d95e2fe6c51f679106bd0b0dc4a448101/src/reagent/impl/template.cljs#L37
+        #_[devexpress/data-type-provider {:for ["url"]
+                                          :formatterComponent #(str "url: " %)}]
+        [devexpress/sorting-state {:defaultSorting [{:columnName "id"
+                                                     :direction "asc"}]}]
+        [devexpress/integrated-sorting]
+        [devexpress/paging-state {:defaultCurrentPage 0
+                                  :defaultPageSize 10}]
+        [devexpress/integrated-paging]
+        [devexpress/table]
+        [devexpress/table-header-row {:showSortingControls true}]
+        [devexpress/paging-panel {:pageSizes [2,5,10]}]])]]
+
+   #_[:div
+      [:div.font-large {:style {:margin "1rem 0"}} "Welcome!"]
+
+      [:p.font-normal "This is a demo of "
+       [:a {:href "https://github.com/Day8/re-frame-10x"} "re-frame-10x"] ", "
+       [:a {:href "https://github.com/thheller/shadow-cljs/"} "shadow-cljs"] ", and "
+       [:a {:href "https://github.com/mhuebert/re-frame-simple"}
+        "re-frame-simple"] ". Read " [:a {:href "#welcome"} "more,"] " see "
+       [:a {:href "https://github.com/mhuebert/shadow-re-frame/blob/master/src/shadow_re_frame/simple.cljs"} "source code"] "."]
+
+      (doall (for [id (counter-ids)]
+               ^{:key id} [counter id]))
+
+      [:div.button
+       {:on-click #(db/dispatch [:new-counter])
+        :style {:background "pink"}}
+       "Add Counter"]
 
 
 
-   (let [sample-input (db/get :sample-input)]
-     [:div.text-example
-      {:style {:margin "2.5rem 0 0"}}
-      [:input {:value sample-input
-               :placeholder "Your name"
-               :on-change #(db/assoc! :sample-input (.. % -target -value))}]
-      [:div "Hello, " (or sample-input "____")]])
+      (let [sample-input (db/get :sample-input)]
+        [:div.text-example
+         {:style {:margin "2.5rem 0 0"}}
+         [:input {:value sample-input
+                  :placeholder "Your name"
+                  :on-change #(db/assoc! :sample-input (.. % -target -value))}]
+         [:div "Hello, " (or sample-input "____")]])
 
-   divider
+      divider
 
-   text/welcome
+      text/welcome
 
-   [:p "👨🏻‍💻   by Matt Huebert (" [:a {:href "https://matt.is/"} "website"] ", " [:a {:href "https://www.twitter.com/mhuebert"} "twitter"] ")"]])
+      [:p "👨🏻‍💻   by Matt Huebert (" [:a {:href "https://matt.is/"} "website"] ", " [:a {:href "https://www.twitter.com/mhuebert"} "twitter"] ")"]]])
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

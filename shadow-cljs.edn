@@ -8,11 +8,8 @@
                 :modules {:base {:init-fn shadow-re-frame.simple/init}}
                 :output-dir "public/js/compiled"
                 :asset-path "/js/compiled"
-                :compiler-options {:closure-defines {re-frame.trace.trace-enabled? true}}
                 :devtools {:http-root "public"
-                           :http-port 8700
-                           :preloads [devtools.preload
-                                      day8.re-frame-10x.preload]}}
+                           :http-port 8700}}
 
           ;; docs build (includes 10x in the release)
           :docs {:target :browser
