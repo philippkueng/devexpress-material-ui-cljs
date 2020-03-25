@@ -139,7 +139,8 @@
             [devexpress/table-header-row {:showSortingControls true}]
             [devexpress/paging-panel {:pageSizes [2,5,10]}]
             [devexpress/toolbar]
-            [devexpress/export-panel {:startExport start-export}]]
+            [devexpress/export-panel {:startExport start-export
+                                      :messages {:exportAll "Customized export all the data message"}}]]
            [devexpress/grid-exporter {:ref exporter-ref
                                       :rows rows
                                       :columns columns
