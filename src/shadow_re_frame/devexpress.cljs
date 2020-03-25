@@ -9,6 +9,7 @@
 (def button (r/adapt-react-class (aget material-ui "Button")))
 (def input (r/adapt-react-class (aget material-ui "Input")))
 (def paper (r/adapt-react-class (aget material-ui "Paper")))
+(def switch (r/adapt-react-class (aget material-ui "Switch")))
 (def typography (r/adapt-react-class (aget material-ui "Typography")))
 
 ;; mapping of devexpress components
@@ -29,13 +30,3 @@
 (def table-selection (r/adapt-react-class (aget dx-react-grid-material-ui "TableSelection")))
 (def toolbar (r/adapt-react-class (aget dx-react-grid-material-ui "Toolbar")))
 (def grid (r/adapt-react-class (aget dx-react-grid-material-ui "Grid")))
-
-#_(defn url-formatter [url]
-    [:a {:href url} url])
-
-#_(def url-type-provider
-    [data-type-provider {:formatterComponent url-formatter}])
-
-#_(defn url-type-provider [args & children]
-    (into [data-type-provider args]
-      children))

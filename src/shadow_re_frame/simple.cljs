@@ -114,14 +114,18 @@
                       :saleDate "22.12.2019"
                       :customer "John"
                       :url (str "https://example.org/product" item)
-                      :id item})
+                      :id item
+                      :active (if (even? (rand-int 2))
+                                "true"
+                                "false")})
               columns [{:name "id" :title "ID"}
                        {:name "product" :title "Product"}
                        {:name "region" :title "Region"}
                        {:name "amount" :title "Amount"}
                        {:name "saleDate" :title "Sale Date"}
                        {:name "customer" :title "Customer"}
-                       {:name "url" :title "URL"}]]
+                       {:name "url" :title "URL"}
+                       {:name "active" :title "Active"}]]
           [:div
            [devexpress/grid {:rows rows
                              :columns columns}
@@ -129,6 +133,11 @@
             ;; https://github.com/reagent-project/reagent/blob/ecbbc60d95e2fe6c51f679106bd0b0dc4a448101/src/reagent/impl/template.cljs#L37
             [devexpress/data-type-provider {"for" ["url"]
                                             :formatterComponent #(reagent/as-element [:a {:href (.-value %)} "Link"])}]
+            [devexpress/data-type-provider {"for" ["active"]
+                                            :formatterComponent #(reagent/as-element
+                                                                   [devexpress/switch {:checked (if (= "true" (.-value %))
+                                                                                                  true
+                                                                                                  false)}])}]
             [devexpress/sorting-state {:defaultSorting [{:columnName "id"
                                                          :direction "asc"}]}]
             [devexpress/integrated-sorting]
