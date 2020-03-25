@@ -3,9 +3,12 @@
   "Example of `re-frame-simple`, an alternate `re-frame` syntax for simple use cases."
   (:require
    [re-view.re-frame-simple :as db]
+   [react :as react]
    [reagent.core :as reagent]
+   [reagent.dom :as dom]
    [shadow-re-frame.welcome :as text]
-   [shadow-re-frame.devexpress :as devexpress]))
+   [shadow-re-frame.devexpress :as devexpress]
+   ["file-saver/dist/FileSaver.min.js" :as file-saver]))
 
 ;;
 ;; For a complete introduction to `re-view.re-frame-simple`, see the readme:
@@ -53,22 +56,22 @@
 ;;
 
 (db/defupdate :initialize
-              "Initialize the `db` with the preselected emoji as counter IDs."
-              [db]
-              {:counter-ids (shuffle ["👹" "👺" "💩" "👻💀️"
-                                       "👽" "👾" "🤖" "🎃"
-                                       "😺" "👏" "🙏" "👅"
-                                       "👂" "👃" "👣" "👁"
-                                       "👀" "👨‍" "🚒" "👩‍✈️"
-                                       "👞" "👓" "☂️" "🎈"
-                                       "📜" "🏳️‍🌈" "🚣" "🏇"])})
+  "Initialize the `db` with the preselected emoji as counter IDs."
+  [db]
+  {:counter-ids (shuffle ["👹" "👺" "💩" "👻💀️"
+                          "👽" "👾" "🤖" "🎃"
+                          "😺" "👏" "🙏" "👅"
+                          "👂" "👃" "👣" "👁"
+                          "👀" "👨‍" "🚒" "👩‍✈️"
+                          "👞" "👓" "☂️" "🎈"
+                          "📜" "🏳️‍🌈" "🚣" "🏇"])})
 
 (db/defupdate :new-counter
-              "Create a new counter, using an ID from the pre-selected emoji."
-              [db]
-              (-> db
-                  (assoc-in [:counters (peek (:counter-ids db))] 0)
-                  (update :counter-ids pop)))
+  "Create a new counter, using an ID from the pre-selected emoji."
+  [db]
+  (-> db
+    (assoc-in [:counters (peek (:counter-ids db))] 0)
+    (update :counter-ids pop)))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -83,10 +86,10 @@
 
 
 (db/defquery counter-ids
-             "Return the list of counters in the db, by id."
-             []
-             (-> (db/get :counters)
-                 (keys)))
+  "Return the list of counters in the db, by id."
+  []
+  (-> (db/get :counters)
+    (keys)))
 
 ;;
 ;; a component that uses the query will update when its data changes.
@@ -95,6 +98,57 @@
 (def divider [:div.font-large
               {:style {:margin "2rem 0 1rem"}}
               "〰️〰️〰️〰️〰️〰️〰️"])
+
+(defn table-with-export []
+  (let [exporter-ref (react/useRef)
+        start-export (react/useCallback (fn [] (.exportGrid (.-current exporter-ref))) (clj->js [exporter-ref]))]
+    (reagent/as-element
+      [:div
+       [devexpress/typography {:variant "h5"} "DevExpress: A normal table with paging, sorting, custom link formatting and export functionality"]
+       [:br]
+       [devexpress/paper
+        (let [rows (for [item (range 12)]
+                     {:product (str "Product " item)
+                      :region (nth ["APAC" "US" "EUROPE"] (rand-int 3))
+                      :amount (rand-int 100)
+                      :saleDate "22.12.2019"
+                      :customer "John"
+                      :url (str "https://example.org/product" item)
+                      :id item})
+              columns [{:name "id" :title "ID"}
+                       {:name "product" :title "Product"}
+                       {:name "region" :title "Region"}
+                       {:name "amount" :title "Amount"}
+                       {:name "saleDate" :title "Sale Date"}
+                       {:name "customer" :title "Customer"}
+                       {:name "url" :title "URL"}]]
+          [:div
+           [devexpress/grid {:rows rows
+                             :columns columns}
+            ;; a custom data type provider seems to struggle with reagent's default of turning all the :for keys into :htmlFor
+            ;; https://github.com/reagent-project/reagent/blob/ecbbc60d95e2fe6c51f679106bd0b0dc4a448101/src/reagent/impl/template.cljs#L37
+            [devexpress/data-type-provider {"for" ["url"]
+                                            :formatterComponent #(reagent/as-element [:a {:href (.-value %)} "Link"])}]
+            [devexpress/sorting-state {:defaultSorting [{:columnName "id"
+                                                         :direction "asc"}]}]
+            [devexpress/integrated-sorting]
+            [devexpress/paging-state {:defaultCurrentPage 0
+                                      :defaultPageSize 10}]
+            [devexpress/integrated-paging]
+            [devexpress/table]
+            [devexpress/table-header-row {:showSortingControls true}]
+            [devexpress/paging-panel {:pageSizes [2,5,10]}]
+            [devexpress/toolbar]
+            [devexpress/export-panel {:startExport start-export}]]
+           [devexpress/grid-exporter {:ref exporter-ref
+                                      :rows rows
+                                      :columns columns
+                                      :onSave (fn [workbook]
+                                                (.then (.writeBuffer (.-xlsx workbook))
+                                                  (fn [buffer]
+                                                    ;; saveAs(new Blob([buffer], { type: 'application/octet-stream' }), 'DataGrid.xlsx');
+                                                    (file-saver/saveAs (js/Blob. (clj->js [buffer]) (clj->js {:type "application/octet-stream"})) "Export.xlsx")
+                                                    (println "we got a buffer"))))}]])]])))
 
 (defn root-view
   "Render the page"
@@ -146,74 +200,9 @@
    [:br]
    [:br]
 
-   ;; a normal table with paging, sorting and links
-   [:div
-    [devexpress/typography {:variant "h5"} "DevExpress: A normal table with paging, sorting and custom link formatting"]
-    [:br]
-    [devexpress/paper
-     (let [rows (for [item (range 12)]
-                  {:product (str "Product " item)
-                   :region (nth ["APAC" "US" "EUROPE"] (rand-int 3))
-                   :amount (rand-int 100)
-                   :saleDate "22.12.2019"
-                   :customer "John"
-                   :url (str "https://example.org/product" item)
-                   :id item})]
-       [devexpress/grid {:rows rows
-                         :columns [{:name "id" :title "ID"}
-                                   {:name "product" :title "Product"}
-                                   {:name "region" :title "Region"}
-                                   {:name "amount" :title "Amount"}
-                                   {:name "saleDate" :title "Sale Date"}
-                                   {:name "customer" :title "Customer"}
-                                   {:name "url" :title "URL"}]}
-        ;; a custom data type provider seems to struggle with reagent's default of turning all the :for keys into :htmlFor
-        ;; https://github.com/reagent-project/reagent/blob/ecbbc60d95e2fe6c51f679106bd0b0dc4a448101/src/reagent/impl/template.cljs#L37
-        #_[devexpress/data-type-provider {:for ["url"]
-                                          :formatterComponent #(str "url: " %)}]
-        [devexpress/sorting-state {:defaultSorting [{:columnName "id"
-                                                     :direction "asc"}]}]
-        [devexpress/integrated-sorting]
-        [devexpress/paging-state {:defaultCurrentPage 0
-                                  :defaultPageSize 10}]
-        [devexpress/integrated-paging]
-        [devexpress/table]
-        [devexpress/table-header-row {:showSortingControls true}]
-        [devexpress/paging-panel {:pageSizes [2,5,10]}]])]]
+   ;; a normal table with paging, sorting, links and export functionality
+   [:> table-with-export]])
 
-   #_[:div
-      [:div.font-large {:style {:margin "1rem 0"}} "Welcome!"]
-
-      [:p.font-normal "This is a demo of "
-       [:a {:href "https://github.com/Day8/re-frame-10x"} "re-frame-10x"] ", "
-       [:a {:href "https://github.com/thheller/shadow-cljs/"} "shadow-cljs"] ", and "
-       [:a {:href "https://github.com/mhuebert/re-frame-simple"}
-        "re-frame-simple"] ". Read " [:a {:href "#welcome"} "more,"] " see "
-       [:a {:href "https://github.com/mhuebert/shadow-re-frame/blob/master/src/shadow_re_frame/simple.cljs"} "source code"] "."]
-
-      (doall (for [id (counter-ids)]
-               ^{:key id} [counter id]))
-
-      [:div.button
-       {:on-click #(db/dispatch [:new-counter])
-        :style {:background "pink"}}
-       "Add Counter"]
-
-
-
-      (let [sample-input (db/get :sample-input)]
-        [:div.text-example
-         {:style {:margin "2.5rem 0 0"}}
-         [:input {:value sample-input
-                  :placeholder "Your name"
-                  :on-change #(db/assoc! :sample-input (.. % -target -value))}]
-         [:div "Hello, " (or sample-input "____")]])
-
-      divider
-
-      text/welcome
-
-      [:p "👨🏻‍💻   by Matt Huebert (" [:a {:href "https://matt.is/"} "website"] ", " [:a {:href "https://www.twitter.com/mhuebert"} "twitter"] ")"]]])
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -221,8 +210,8 @@
 ;; Boilerplate code to get the page to render:
 
 (defn ^:dev/after-load render []
-  (reagent/render [root-view]
-                  (js/document.getElementById "shadow-re-frame")))
+  (dom/render [root-view]
+    (js/document.getElementById "shadow-re-frame")))
 
 (defn init []
 
