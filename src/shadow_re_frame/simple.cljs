@@ -153,12 +153,10 @@
            [devexpress/grid-exporter {:ref exporter-ref
                                       :rows rows
                                       :columns columns
-                                      :onSave (fn [workbook]
+                                      :onSave (fn [^js workbook]
                                                 (.then (.writeBuffer (.-xlsx workbook))
                                                   (fn [buffer]
-                                                    ;; saveAs(new Blob([buffer], { type: 'application/octet-stream' }), 'DataGrid.xlsx');
-                                                    (file-saver/saveAs (js/Blob. (clj->js [buffer]) (clj->js {:type "application/octet-stream"})) "Export.xlsx")
-                                                    (println "we got a buffer"))))}]])]])))
+                                                    (file-saver/saveAs (js/Blob. (clj->js [buffer]) (clj->js {:type "application/octet-stream"})) "Export.xlsx"))))}]])]])))
 
 (defn root-view
   "Render the page"
