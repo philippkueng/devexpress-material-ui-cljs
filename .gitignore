@@ -10,3 +10,4 @@ pom.xml
 .cpcache
 public/js
 .shadow-cljs
+docs/*
